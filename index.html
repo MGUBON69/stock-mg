@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MG Car Stock Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Sarabun', sans-serif;
+      background: #f0f2f5;
+      color: #333;
+    }
+
+    /* AUTH SCREEN */
+    .auth-screen {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      padding: 20px;
+    }
+    .auth-card {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 420px;
+    }
+    .auth-card h1 {
+      color: #e63946;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    .auth-card .subtitle {
+      text-align: center;
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .auth-card input {
+      width: 100%;
+      padding: 14px;
+      margin: 8px 0;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 15px;
+      font-family: 'Sarabun', sans-serif;
+      transition: border-color 0.3s;
+    }
+    .auth-card input:focus {
+      outline: none;
+      border-color: #e63946;
+    }
+    .auth-card button {
+      width: 100%;
+      padding: 14px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .btn-login {
+      background: #e63946;
+      color: white;
+    }
+    .btn-login:hover { background: #c1121f; transform: translateY(-2px); }
+    .btn-register {
+      background: #f8f9fa;
+      color: #333;
+      border: 2px solid #ddd !important;
+    }
+    .btn-register:hover { background: #e9ecef; }
+    .auth-divider {
+      text-align: center;
+      margin: 20px 0;
+      color: #999;
+      position: relative;
+    }
+    .auth-divider::before, .auth-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 40%;
+      height: 1px;
+      background: #ddd;
+    }
+    .auth-divider::before { left: 0; }
+    .auth-divider::after { right: 0; }
+
+    /* MAIN APP */
+    .app-container { display: none; }
+    .app-container.active { display: block; }
+
+    /* HEADER */
+    .header {
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      color: white;
+      padding: 16px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; gap: 15px; }
+    .header-left h1 { font-size: 22px; font-weight: 600; }
+    .header-left .logo { font-size: 28px; }
+    .header-right { display: flex; align-items: center; gap: 15px; }
+    .user-info { display: flex; align-items: center; gap: 10px; }
+    .user-avatar {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: #e63946;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: bold;
+    }
+    .btn-logout {
+      background: rgba(255,255,255,0.1);
+      color: white;
+      border: 1px solid rgba(255,255,255,0.3);
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      transition: all 0.3s;
+    }
+    .btn-logout:hover { background: rgba(255,255,255,0.2); }
+
+    /* SUMMARY CARDS */
+    .summary-section {
+      padding: 25px 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+    .summary-card {
+      background: white;
+      padding: 24px;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border-left: 5px solid;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .summary-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    }
+    .summary-card .card-icon {
+      font-size: 28px;
+      margin-bottom: 12px;
+    }
+    .summary-card h3 {
+      font-size: 14px;
+      color: #666;
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+    .summary-card .card-value {
+      font-size: 36px;
+      font-weight: 700;
+    }
+    .card-total { border-color: #2196F3; }
+    .card-total .card-icon { color: #2196F3; }
+    .card-total .card-value { color: #2196F3; }
+    .card-pending { border-color: #FF9800; }
+    .card-pending .card-icon { color: #FF9800; }
+    .card-pending .card-value { color: #FF9800; }
+    .card-finance { border-color: #4CAF50; }
+    .card-finance .card-icon { color: #4CAF50; }
+    .card-finance .card-value { color: #4CAF50; }
+    .card-delivered { border-color: #9C27B0; }
+    .card-delivered .card-icon { color: #9C27B0; }
+    .card-delivered .card-value { color: #9C27B0; }
+    .card-display { border-color: #00BCD4; }
+    .card-display .card-icon { color: #00BCD4; }
+    .card-display .card-value { color: #00BCD4; }
+
+    /* TOOLBAR */
+    .toolbar {
+      padding: 0 30px 20px;
+      display: flex;
+      gap: 15px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .btn-add {
+      background: #e63946;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .btn-add:hover { background: #c1121f; transform: translateY(-2px); }
+    .search-box {
+      flex: 1;
+      min-width: 250px;
+      position: relative;
+    }
+    .search-box input {
+      width: 100%;
+      padding: 12px 16px 12px 44px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Sarabun', sans-serif;
+      transition: border-color 0.3s;
+    }
+    .search-box input:focus {
+      outline: none;
+      border-color: #e63946;
+    }
+    .search-box i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #999;
+    }
+    .filter-select {
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Sarabun', sans-serif;
+      cursor: pointer;
+      background: white;
+      min-width: 180px;
+    }
+    .filter-select:focus {
+      outline: none;
+      border-color: #e63946;
+    }
+
+    /* TABLE */
+    .table-section {
+      padding: 0 30px 30px;
+    }
+    .table-container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      overflow: hidden;
+    }
+    .table-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .table-header h2 {
+      font-size: 18px;
+      color: #333;
+    }
+    .table-count {
+      background: #f0f2f5;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #666;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead {
+      background: #f8f9fa;
+    }
+    th {
+      padding: 14px 16px;
+      text-align: left;
+      font-size: 13px;
+      font-weight: 600;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 2px solid #eee;
+    }
+    td {
+      padding: 14px 16px;
+      font-size: 14px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    tbody tr {
+      transition: background 0.2s;
+    }
+    tbody tr:hover {
+      background: #f8f9fa;
+    }
+    .vin-cell {
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      color: #555;
+      background: #f8f9fa;
+      padding: 4px 8px;
+      border-radius: 4px;
+      display: inline-block;
+    }
+    .model-cell {
+      font-weight: 600;
+      color: #333;
+    }
+    .variant-badge {
+      background: #e63946;
+      color: white;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .color-dot {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .color-circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 2px solid #ddd;
+    }
+    .days-badge {
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .days-low { background: #d4edda; color: #155724; }
+    .days-medium { background: #fff3cd; color: #856404; }
+    .days-high { background: #f8d7da; color: #721c24; }
+    .status-badge {
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-block;
+      white-space: nowrap;
+    }
+    .status-no-reserve { background: #fff3cd; color: #856404; }
+    .status-finance { background: #d4edda; color: #155724; }
+    .status-delivered { background: #d1ecf1; color: #0c5460; }
+    .status-waiting { background: #f8d7da; color: #721c24; }
+    .status-display { background: #e2e3e5; color: #383d41; }
+    .status-fail { background: #f5c6cb; color: #721c24; }
+    .price-cell {
+      font-weight: 600;
+      color: #e63946;
+    }
+    .remark-cell {
+      color: #666;
+      font-size: 13px;
+    }
+    .action-btns {
+      display: flex;
+      gap: 8px;
+    }
+    .btn-icon {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s;
+      font-size: 14px;
+    }
+    .btn-edit {
+      background: #e3f2fd;
+      color: #2196F3;
+    }
+    .btn-edit:hover { background: #2196F3; color: white; }
+    .btn-delete {
+      background: #ffebee;
+      color: #dc3545;
+    }
+    .btn-delete:hover { background: #dc3545; color: white; }
+
+    /* MODAL */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.active {
+      display: flex;
+    }
+    .modal {
+      background: white;
+      border-radius: 20px;
+      width: 100%;
+      max-width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    .modal-header {
+      padding: 24px;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(135deg, #1a1a2e, #0f3460);
+      color: white;
+      border-radius: 20px 20px 0 0;
+    }
+    .modal-header h2 { font-size: 20px; }
+    .modal-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 28px;
+      cursor: pointer;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: background 0.3s;
+    }
+    .modal-close:hover { background: rgba(255,255,255,0.1); }
+    .modal-body { padding: 24px; }
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+    .form-group.full-width {
+      grid-column: 1 / -1;
+    }
+    .form-group label {
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #555;
+      font-size: 14px;
+    }
+    .form-group label .required {
+      color: #e63946;
+    }
+    .form-group input,
+    .form-group select {
+      padding: 12px;
+      border: 2px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: 'Sarabun', sans-serif;
+      transition: border-color 0.3s;
+    }
+    .form-group input:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #e63946;
+    }
+    .modal-footer {
+      padding: 20px 24px;
+      border-top: 1px solid #eee;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+    .btn-cancel {
+      background: #f0f2f5;
+      color: #666;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+    }
+    .btn-save {
+      background: #e63946;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: 'Sarabun', sans-serif;
+      transition: all 0.3s;
+    }
+    .btn-save:hover { background: #c1121f; }
+
+    /* LOADING */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+    .loading i {
+      font-size: 32px;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+    .empty-state i {
+      font-size: 64px;
+      margin-bottom: 16px;
+      color: #ddd;
+    }
+    .empty-state h3 {
+      font-size: 20px;
+      margin-bottom: 8px;
+      color: #666;
+    }
+
+    /* TOAST */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      right: 30px;
+      background: #333;
+      color: white;
+      padding: 16px 24px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+      display: none;
+      align-items: center;
+      gap: 12px;
+      z-index: 2000;
+      animation: slideIn 0.3s ease;
+    }
+    .toast.show { display: flex; }
+    .toast.success { background: #4CAF50; }
+    .toast.error { background: #dc3545; }
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .summary-section { grid-template-columns: repeat(2, 1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+      .toolbar { flex-direction: column; }
+      .search-box { min-width: 100%; }
+      table { font-size: 12px; }
+      th, td { padding: 10px 8px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AUTH SCREEN -->
+  <div id="authScreen" class="auth-screen">
+    <div class="auth-card">
+      <h1><i class="fas fa-car"></i> MG Stock</h1>
+      <p class="subtitle">ระบบจัดการสต็อกรถ MG</p>
+      
+      <div id="loginForm">
+        <input type="email" id="loginEmail" placeholder=" อีเมล">
+        <input type="password" id="loginPassword" placeholder=" รหัสผ่าน">
+        <button class="btn-login" onclick="handleLogin()">
+          <i class="fas fa-sign-in-alt"></i> เข้าสู่ระบบ
+        </button>
+        <div class="auth-divider">หรือ</div>
+        <button class="btn-register" onclick="toggleAuthMode()">
+          <i class="fas fa-user-plus"></i> สมัครสมาชิก
+        </button>
+      </div>
+
+      <div id="registerForm" style="display:none;">
+        <input type="email" id="regEmail" placeholder="📧 อีเมล">
+        <input type="password" id="regPassword" placeholder=" รหัสผ่าน (6 ตัวขึ้นไป)">
+        <button class="btn-login" onclick="handleRegister()">
+          <i class="fas fa-user-plus"></i> สมัครสมาชิก
+        </button>
+        <div class="auth-divider">หรือ</div>
+        <button class="btn-register" onclick="toggleAuthMode()">
+          <i class="fas fa-sign-in-alt"></i> กลับไปหน้า Login
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="appContainer" class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <div class="header-left">
+        <span class="logo"><i class="fas fa-car"></i></span>
+        <h1>MG Car Stock Dashboard</h1>
+      </div>
+      <div class="header-right">
+        <div class="user-info">
+          <div class="user-avatar" id="userAvatar">U</div>
+          <span id="userEmail">user@email.com</span>
+        </div>
+        <button class="btn-logout" onclick="handleLogout()">
+          <i class="fas fa-sign-out-alt"></i> Logout
+        </button>
+      </div>
+    </header>
+
+    <!-- Summary Cards -->
+    <div class="summary-section">
+      <div class="summary-card card-total">
+        <div class="card-icon"><i class="fas fa-car"></i></div>
+        <h3>รถทั้งหมด</h3>
+        <div class="card-value" id="statTotal">0</div>
+      </div>
+      <div class="summary-card card-pending">
+        <div class="card-icon"><i class="fas fa-clock"></i></div>
+        <h3>ยังไม่มีจอง</h3>
+        <div class="card-value" id="statPending">0</div>
+      </div>
+      <div class="summary-card card-finance">
+        <div class="card-icon"><i class="fas fa-check-circle"></i></div>
+        <h3>ไฟแนนซ์อนุมัติ</h3>
+        <div class="card-value" id="statFinance">0</div>
+      </div>
+      <div class="summary-card card-delivered">
+        <div class="card-icon"><i class="fas fa-handshake"></i></div>
+        <h3>ส่งมอบแล้ว</h3>
+        <div class="card-value" id="statDelivered">0</div>
+      </div>
+      <div class="summary-card card-display">
+        <div class="card-icon"><i class="fas fa-store"></i></div>
+        <h3>Display</h3>
+        <div class="card-value" id="statDisplay">0</div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <button class="btn-add" onclick="openModal()">
+        <i class="fas fa-plus"></i> เพิ่มรถเข้าสต็อก
+      </button>
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input type="text" id="searchInput" placeholder="ค้นหา VIN, รุ่น, หมายเหตุ..." oninput="handleSearch()">
+      </div>
+      <select class="filter-select" id="filterStatus" onchange="handleFilter()">
+        <option value="all">📋 ทุกสถานะ</option>
+        <option value="ยังไม่มีจอง">⏳ ยังไม่มีจอง</option>
+        <option value="ไฟแนนซ์อนุมัติแล้ว">✅ ไฟแนนซ์อนุมัติแล้ว</option>
+        <option value="รอเข้าไฟแนนซ์"> รอเข้าไฟแนนซ์</option>
+        <option value="ส่งมอบแล้ว">🤝 ส่งมอบแล้ว</option>
+        <option value="Display">🏪 Display</option>
+        <option value="ไม่ผ่านไฟแนนซ์"> ไม่ผ่านไฟแนนซ์</option>
+      </select>
+    </div>
+
+    <!-- Table -->
+    <div class="table-section">
+      <div class="table-container">
+        <div class="table-header">
+          <h2><i class="fas fa-list"></i> รายการสต็อก</h2>
+          <span class="table-count" id="tableCount">0 รายการ</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>VIN</th>
+                <th>รุ่น</th>
+                <th>Variant</th>
+                <th>สี</th>
+                <th>รับเข้า</th>
+                <th>จำนวนวัน</th>
+                <th>สถานะ</th>
+                <th>ราคา</th>
+                <th>หมายเหตุ</th>
+                <th>จัดการ</th>
+              </tr>
+            </thead>
+            <tbody id="stockTableBody">
+              <tr>
+                <td colspan="11">
+                  <div class="loading">
+                    <i class="fas fa-spinner"></i>
+                    <p>กำลังโหลดข้อมูล...</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle"><i class="fas fa-plus-circle"></i> เพิ่มรถเข้าสต็อก</h2>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div class="modal-body">
+        <form id="stockForm" onsubmit="handleFormSubmit(event)">
+          <input type="hidden" id="editId">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>VIN <span class="required">*</span></label>
+              <input type="text" id="formVin" required placeholder="เช่น MMLW74E32PG020662">
+            </div>
+            <div class="form-group">
+              <label>รุ่น (Model) <span class="required">*</span></label>
+              <input type="text" id="formModel" required placeholder="เช่น MG ZS (599,000)">
+            </div>
+            <div class="form-group">
+              <label>Variant</label>
+              <select id="formVariant">
+                <option value="">-- เลือก --</option>
+                <option value="D">D</option>
+                <option value="V">V</option>
+                <option value="X">X</option>
+                <option value="X+">X+</option>
+                <option value="LR">LR</option>
+                <option value="V+">V+</option>
+                <option value="STANDARD">STANDARD</option>
+                <option value="MAX">MAX</option>
+                <option value="ULTRA">ULTRA</option>
+                <option value="D+">D+</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>สี (Color) <span class="required">*</span></label>
+              <input type="text" id="formColor" required placeholder="เช่น Red, White, Black">
+            </div>
+            <div class="form-group">
+              <label>วันที่รับเข้าสต็อก <span class="required">*</span></label>
+              <input type="date" id="formEntryDate" required>
+            </div>
+            <div class="form-group">
+              <label>สถานะ <span class="required">*</span></label>
+              <select id="formStatus" required>
+                <option value="">-- เลือกสถานะ --</option>
+                <option value="ยังไม่มีจอง">ยังไม่มีจอง</option>
+                <option value="ไฟแนนซ์อนุมัติแล้ว/เงินสด รอส่งมอบ">ไฟแนนซ์อนุมัติแล้ว/เงินสด รอส่งมอบ</option>
+                <option value="ส่งมอบแล้ว">ส่งมอบแล้ว</option>
+                <option value="รอเข้าไฟแนนซ์">รอเข้าไฟแนนซ์</option>
+                <option value="ไม่ผ่านไฟแนนซ์">ไม่ผ่านไฟแนนซ์</option>
+                <option value="Display">Display</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>ราคา (บาท)</label>
+              <input type="number" id="formPrice" placeholder="เช่น 499000" min="0">
+            </div>
+            <div class="form-group">
+              <label>หมายเหตุ</label>
+              <input type="text" id="formRemark" placeholder="เช่น เข้า Central, พี่ตุ้ม">
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">ยกเลิก</button>
+        <button class="btn-save" onclick="document.getElementById('stockForm').requestSubmit()">
+          <i class="fas fa-save"></i> บันทึก
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <i class="fas fa-check-circle"></i>
+    <span id="toastMessage">สำเร็จ</span>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import {
+      getFirestore, collection, addDoc, getDocs, getDoc,
+      doc, updateDoc, deleteDoc, query, where, orderBy,
+      onSnapshot, serverTimestamp, setDoc
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import {
+      getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+      signOut, onAuthStateChanged
+    } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+    // ========== FIREBASE CONFIG ==========
+    // TODO: เปลี่ยนเป็น config ของคุณเองจาก Firebase Console
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const STOCK_COLLECTION = 'mg_stock';
+
+    // ========== SEED DATA (ข้อมูลตัวอย่างจากตาราง) ==========
+    const seedData = [
+      { vin: "MMLW74E32PG020662", model: "MG ZS (599,000)", variant: "D", color: "Red", entryDate: "2023-07-04", status: "ยังไม่มีจอง", price: 499000, remark: "เข้า Central" },
+      { vin: "MMLWP456XRG029042", model: "MG3 HYBRID+ (579,900)", variant: "D", color: "White", entryDate: "2024-11-22", status: "ยังไม่มีจอง", price: 499000, remark: "เข้า Central" },
+      { vin: "MMLW74E60PG024039", model: "MG ZS (689,000)", variant: "V", color: "White", entryDate: "2026-05-06", status: "ยังไม่มีจอง", price: 599000, remark: "599000 Display" },
+      { vin: "MMLW74E3XPG021963", model: "MG ZS (649,000)", variant: "X", color: "Black", entryDate: "2026-05-11", status: "ไม่ผ่านไฟแนนซ์", price: 549000, remark: "" },
+      { vin: "MMLA36E48RG022459", model: "MG5 2024 (629,900)", variant: "D", color: "White", entryDate: "2026-06-13", status: "ยังไม่มีจอง", price: 579900, remark: "display, เข้า Central" },
+      { vin: "MMLWS4966TG019723", model: "MG S5 EV (759,900)", variant: "X+", color: "Grey", entryDate: "2026-07-21", status: "ยังไม่มีจอง", price: 759900, remark: "เข้า Central" },
+      { vin: "LSJWT4098TS037246", model: "MG iM5", variant: "LR", color: "Grey", entryDate: "2026-07-28", status: "ยังไม่มีจอง", price: 0, remark: "display, เข้า Central" },
+      { vin: "MMLWS4963TG022451", model: "MG S5EV (849,900)", variant: "V+", color: "White", entryDate: "2026-09-03", status: "ยังไม่มีจอง", price: 849900, remark: "Display" },
+      { vin: "MMLEB494XTG023283", model: "MG URBAN (549,900)", variant: "STANDARD", color: "White", entryDate: "2026-09-03", status: "ยังไม่มีจอง", price: 549900, remark: "Display" },
+      { vin: "MMLWH4962TG024514", model: "MG4 ELECTRIC (709,900)", variant: "X", color: "White", entryDate: "2026-09-09", status: "ส่งมอบแล้ว", price: 709900, remark: "น้องเอิร์ท" },
+      { vin: "MMLEB494XTG025377", model: "MG URBAN (729,900)", variant: "ULTRA", color: "Grey", entryDate: "2026-09-09", status: "ยังไม่มีจอง", price: 729900, remark: "เข้า Central" },
+      { vin: "MMLEB49A9TG023989", model: "MG URBAN (619,900)", variant: "MAX", color: "BEIGE", entryDate: "2026-09-28", status: "ไฟแนนซ์อนุมัติแล้ว/เงินสด รอส่งมอบ", price: 619900, remark: "พี่ตุ้ม" },
+      { vin: "MMLEB4945TG020338", model: "MG URBAN (549,900)", variant: "STANDARD", color: "BEIGE", entryDate: "2026-09-29", status: "ไฟแนนซ์อนุมัติแล้ว/เงินสด รอส่งมอบ", price: 549900, remark: "พี่ปุ๋ม" },
+      { vin: "MMLEB49A2TG028502", model: "MG URBAN (619,900)", variant: "MAX", color: "Black", entryDate: "2026-10-04", status: "ส่งมอบแล้ว", price: 619900, remark: "น้องตรีม" },
+      { vin: "MMLWS4963TG023583", model: "MG S5EV (759,900)", variant: "X+", color: "White", entryDate: "2026-10-06", status: "ยังไม่มีจอง", price: 759900, remark: "" },
+      { vin: "MMLWS4962TG022781", model: "MG S5EV (759,900)", variant: "X+", color: "Black", entryDate: "2026-10-06", status: "ยังไม่มีจอง", price: 759900, remark: "" },
+      { vin: "MMLWS4960TG025002", model: "MG S5EV (649,900)", variant: "D+", color: "TITANIUM", entryDate: "2026-10-06", status: "รอเข้าไฟแนนซ์", price: 649900, remark: "พี่ปุ๋มจอง" }
+    ];
+
+    // ========== GLOBAL STATE ==========
+    let allStocks = [];
+    let filteredStocks = [];
+    let currentEditId = null;
+    let unsubscribe = null;
+
+    // ========== AUTH FUNCTIONS ==========
+    window.toggleAuthMode = () => {
+      const loginForm = document.getElementById('loginForm');
+      const registerForm = document.getElementById('registerForm');
+      if (loginForm.style.display === 'none') {
+        loginForm.style.display = 'block';
+        registerForm.style.display = 'none';
+      } else {
+        loginForm.style.display = 'none';
+        registerForm.style.display = 'block';
+      }
+    };
+
+    window.handleLogin = async () => {
+      const email = document.getElementById('loginEmail').value;
+      const password = document.getElementById('loginPassword').value;
+      if (!email || !password) {
+        showToast('กรุณากรอกอีเมลและรหัสผ่าน', 'error');
+        return;
+      }
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        showToast('เข้าสู่ระบบสำเร็จ!', 'success');
+      } catch (error) {
+        showToast('Login failed: ' + error.message, 'error');
+      }
+    };
+
+    window.handleRegister = async () => {
+      const email = document.getElementById('regEmail').value;
+      const password = document.getElementById('regPassword').value;
+      if (!email || !password) {
+        showToast('กรุณากรอกอีเมลและรหัสผ่าน', 'error');
+        return;
+      }
+      if (password.length < 6) {
+        showToast('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร', 'error');
+        return;
+      }
+      try {
+        await createUserWithEmailAndPassword(auth, email, password);
+        showToast('สมัครสมาชิกสำเร็จ!', 'success');
+      } catch (error) {
+        showToast('Register failed: ' + error.message, 'error');
+      }
+    };
+
+    window.handleLogout = async () => {
+      await signOut(auth);
+      showToast('ออกจากระบบแล้ว', 'success');
+    };
+
+    // ========== AUTH STATE OBSERVER ==========
+    onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        document.getElementById('authScreen').style.display = 'none';
+        document.getElementById('appContainer').classList.add('active');
+        document.getElementById('userEmail').textContent = user.email;
+        document.getElementById('userAvatar').textContent = user.email.charAt(0).toUpperCase();
+        
+        // Check if database is empty, if so, seed data
+        await checkAndSeedData();
+        
+        // Start listening to stocks
+        listenToStocks();
+      } else {
+        document.getElementById('authScreen').style.display = 'flex';
+        document.getElementById('appContainer').classList.remove('active');
+        if (unsubscribe) unsubscribe();
+      }
+    });
+
+    // ========== SEED DATA ==========
+    async function checkAndSeedData() {
+      const snapshot = await getDocs(collection(db, STOCK_COLLECTION));
+      if (snapshot.empty) {
+        console.log('Database empty, seeding data...');
+        const batch = [];
+        for (const item of seedData) {
+          const daysInStock = calculateDaysInStock(item.entryDate);
+          batch.push(
+            addDoc(collection(db, STOCK_COLLECTION), {
+              ...item,
+              daysInStock: daysInStock,
+              createdAt: serverTimestamp(),
+              updatedAt: serverTimestamp()
+            })
+          );
+        }
+        await Promise.all(batch);
+        console.log('Seeded', seedData.length, 'records');
+      }
+    }
+
+    // ========== STOCK LISTENING ==========
+    function listenToStocks() {
+      const q = query(collection(db, STOCK_COLLECTION), orderBy('createdAt', 'desc'));
+      unsubscribe = onSnapshot(q, (snapshot) => {
+        allStocks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        applyFilters();
+        updateStats();
+      }, (error) => {
+        console.error('Error listening:', error);
+        showToast('เกิดข้อผิดพลาดในการโหลดข้อมูล', 'error');
+      });
+    }
+
+    // ========== CALCULATE DAYS ==========
+    function calculateDaysInStock(entryDate) {
+      const entry = new Date(entryDate);
+      const today = new Date();
+      const diffTime = Math.abs(today - entry);
+      return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+    // ========== UPDATE STATS ==========
+    function updateStats() {
+      document.getElementById('statTotal').textContent = allStocks.length;
+      document.getElementById('statPending').textContent = allStocks.filter(s => s.status && s.status.includes('ยังไม่มีจอง')).length;
+      document.getElementById('statFinance').textContent = allStocks.filter(s => s.status && s.status.includes('ไฟแนนซ์อนุมัติ')).length;
+      document.getElementById('statDelivered').textContent = allStocks.filter(s => s.status && s.status.includes('ส่งมอบแล้ว')).length;
+      document.getElementById('statDisplay').textContent = allStocks.filter(s => s.status && s.status.includes('Display')).length;
+    }
+
+    // ========== APPLY FILTERS ==========
+    function applyFilters() {
+      const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+      const filterStatus = document.getElementById('filterStatus').value;
+
+      filteredStocks = allStocks.filter(stock => {
+        const matchSearch = !searchTerm || 
+          (stock.vin && stock.vin.toLowerCase().includes(searchTerm)) ||
+          (stock.model && stock.model.toLowerCase().includes(searchTerm)) ||
+          (stock.remark && stock.remark.toLowerCase().includes(searchTerm)) ||
+          (stock.color && stock.color.toLowerCase().includes(searchTerm));
+        
+        const matchStatus = filterStatus === 'all' || 
+          (stock.status && stock.status.includes(filterStatus));
+        
+        return matchSearch && matchStatus;
+      });
+
+      renderTable();
+    }
+
+    window.handleSearch = () => applyFilters();
+    window.handleFilter = () => applyFilters();
+
+    // ========== RENDER TABLE ==========
+    function renderTable() {
+      const tbody = document.getElementById('stockTableBody');
+      document.getElementById('tableCount').textContent = filteredStocks.length + ' รายการ';
+
+      if (filteredStocks.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11">
+              <div class="empty-state">
+                <i class="fas fa-car"></i>
+                <h3>ไม่พบข้อมูล</h3>
+                <p>ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filteredStocks.map((stock, index) => {
+        const daysClass = stock.daysInStock > 365 ? 'days-high' : stock.daysInStock > 180 ? 'days-medium' : 'days-low';
+        const statusClass = getStatusClass(stock.status);
+        const colorHex = getColorHex(stock.color);
+
+        return `
+          <tr>
+            <td>${index + 1}</td>
+            <td><span class="vin-cell">${stock.vin || '-'}</span></td>
+            <td class="model-cell">${stock.model || '-'}</td>
+            <td>${stock.variant ? `<span class="variant-badge">${stock.variant}</span>` : '-'}</td>
+            <td>
+              <span class="color-dot">
+                <span class="color-circle" style="background:${colorHex}"></span>
+                ${stock.color || '-'}
+              </span>
+            </td>
+            <td>${stock.entryDate || '-'}</td>
+            <td><span class="days-badge ${daysClass}">${stock.daysInStock || 0} วัน</span></td>
+            <td><span class="status-badge ${statusClass}">${stock.status || '-'}</span></td>
+            <td class="price-cell">${stock.price ? '฿' + Number(stock.price).toLocaleString() : '-'}</td>
+            <td class="remark-cell">${stock.remark || '-'}</td>
+            <td>
+              <div class="action-btns">
+                <button class="btn-icon btn-edit" onclick="editStock('${stock.id}')" title="แก้ไข">
+                  <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn-icon btn-delete" onclick="deleteStock('${stock.id}')" title="ลบ">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function getStatusClass(status) {
+      if (!status) return 'status-default';
+      if (status.includes('ยังไม่มีจอง')) return 'status-no-reserve';
+      if (status.includes('ไฟแนนซ์อนุมัติ')) return 'status-finance';
+      if (status.includes('ส่งมอบแล้ว')) return 'status-delivered';
+      if (status.includes('รอเข้าไฟแนนซ์')) return 'status-waiting';
+      if (status.includes('Display')) return 'status-display';
+      if (status.includes('ไม่ผ่าน')) return 'status-fail';
+      return 'status-default';
+    }
+
+    function getColorHex(color) {
+      const colorMap = {
+        'Red': '#e63946', 'White': '#f8f9fa', 'Black': '#212529',
+        'Grey': '#6c757d', 'BEIGE': '#d4a574', 'TITANIUM': '#878681',
+        'Silver': '#c0c0c0', 'Blue': '#2196F3', 'Green': '#4CAF50'
+      };
+      return colorMap[color] || '#999';
+    }
+
+    // ========== MODAL FUNCTIONS ==========
+    window.openModal = () => {
+      currentEditId = null;
+      document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle"></i> เพิ่มรถเข้าสต็อก';
+      document.getElementById('stockForm').reset();
+      document.getElementById('editId').value = '';
+      document.getElementById('modalOverlay').classList.add('active');
+    };
+
+    window.closeModal = () => {
+      document.getElementById('modalOverlay').classList.remove('active');
+    };
+
+    window.editStock = (id) => {
+      const stock = allStocks.find(s => s.id === id);
+      if (!stock) return;
+
+      currentEditId = id;
+      document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit"></i> แก้ไขข้อมูลรถ';
+      document.getElementById('editId').value = id;
+      document.getElementById('formVin').value = stock.vin || '';
+      document.getElementById('formModel').value = stock.model || '';
+      document.getElementById('formVariant').value = stock.variant || '';
+      document.getElementById('formColor').value = stock.color || '';
+      document.getElementById('formEntryDate').value = stock.entryDate || '';
+      document.getElementById('formStatus').value = stock.status || '';
+      document.getElementById('formPrice').value = stock.price || '';
+      document.getElementById('formRemark').value = stock.remark || '';
+      document.getElementById('modalOverlay').classList.add('active');
+    };
+
+    window.deleteStock = async (id) => {
+      if (!confirm('ยืนยันการลบข้อมูลรถคันนี้?')) return;
+      try {
+        await deleteDoc(doc(db, STOCK_COLLECTION, id));
+        showToast('ลบข้อมูลสำเร็จ!', 'success');
+      } catch (error) {
+        showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
+      }
+    };
+
+    // ========== FORM SUBMIT ==========
+    window.handleFormSubmit = async (e) => {
+      e.preventDefault();
+      
+      const stockData = {
+        vin: document.getElementById('formVin').value.trim(),
+        model: document.getElementById('formModel').value.trim(),
+        variant: document.getElementById('formVariant').value.trim(),
+        color: document.getElementById('formColor').value.trim(),
+        entryDate: document.getElementById('formEntryDate').value,
+        status: document.getElementById('formStatus').value.trim(),
+        price: parseFloat(document.getElementById('formPrice').value) || 0,
+        remark: document.getElementById('formRemark').value.trim(),
+        daysInStock: calculateDaysInStock(document.getElementById('formEntryDate').value),
+        updatedAt: serverTimestamp()
+      };
+
+      try {
+        if (currentEditId) {
+          await updateDoc(doc(db, STOCK_COLLECTION, currentEditId), stockData);
+          showToast('อัปเดตข้อมูลสำเร็จ!', 'success');
+        } else {
+          stockData.createdAt = serverTimestamp();
+          await addDoc(collection(db, STOCK_COLLECTION), stockData);
+          showToast('เพิ่มรถเข้าสต็อกสำเร็จ!', 'success');
+        }
+        closeModal();
+      } catch (error) {
+        showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
+      }
+    };
+
+    // ========== TOAST ==========
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toastMessage');
+      toast.className = 'toast show ' + type;
+      toastMessage.textContent = message;
+      toast.querySelector('i').className = type === 'success' ? 'fas fa-check-circle' : 'fas fa-exclamation-circle';
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    // Close modal on overlay click
+    document.getElementById('modalOverlay').addEventListener('click', (e) => {
+      if (e.target === document.getElementById('modalOverlay')) {
+        closeModal();
+      }
+    });
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeModal();
+    });
+  </script>
+</body>
+</html>
