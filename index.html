@@ -7,7 +7,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
-    /* ... (CSS เดิมของคุณใช้ได้ดีแล้ว ไม่ต้องแก้) ... */
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: 'Sarabun', sans-serif; background: #f0f2f5; color: #333; }
     .auth-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%); padding: 20px; }
@@ -50,6 +49,9 @@
     .toolbar { padding: 0 30px 20px; display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
     .btn-add { background: #e63946; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-size: 15px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.3s; font-family: 'Sarabun', sans-serif; }
     .btn-add:hover { background: #c1121f; transform: translateY(-2px); }
+    .btn-trash { background: #6c757d; }
+    .btn-trash:hover { background: #5a6268; transform: translateY(-2px); }
+    .btn-trash.active { background: #e63946; }
     .search-box { flex: 1; min-width: 250px; position: relative; }
     .search-box input { width: 100%; padding: 12px 16px 12px 44px; border: 2px solid #e0e0e0; border-radius: 10px; font-size: 14px; font-family: 'Sarabun', sans-serif; transition: border-color 0.3s; }
     .search-box input:focus { outline: none; border-color: #e63946; }
@@ -91,6 +93,10 @@
     .btn-edit:hover { background: #2196F3; color: white; }
     .btn-delete { background: #ffebee; color: #dc3545; }
     .btn-delete:hover { background: #dc3545; color: white; }
+    .btn-restore { background: #d4edda; color: #155724; }
+    .btn-restore:hover { background: #28a745; color: white; }
+    .btn-perm-delete { background: #721c24; color: white; }
+    .btn-perm-delete:hover { background: #4a0e15; }
     .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
     .modal-overlay.active { display: flex; }
     .modal { background: white; border-radius: 20px; width: 100%; max-width: 700px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
@@ -132,7 +138,48 @@
     .toast.success { background: #4CAF50; }
     .toast.error { background: #dc3545; }
     @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
-    @media (max-width: 768px) { .summary-section { grid-template-columns: repeat(2, 1fr); } .form-grid { grid-template-columns: 1fr; } .toolbar { flex-direction: column; } .search-box { min-width: 100%; } table { font-size: 12px; } th, td { padding: 10px 8px; } .color-picker-container { flex-direction: column; align-items: flex-start; } }
+
+    /* ========== SOFT DELETE STYLES ========== */
+    tr.deleted-row { 
+      opacity: 0.55; 
+      background: #f8f9fa; 
+    }
+    tr.deleted-row:hover { 
+      background: #eef0f2; 
+    }
+    tr.deleted-row td { 
+      color: #6c757d; 
+    }
+    tr.deleted-row .vin-cell,
+    tr.deleted-row .status-badge,
+    tr.deleted-row .variant-badge { 
+      text-decoration: none; 
+      opacity: 0.9;
+    }
+    .trash-banner {
+      background: linear-gradient(135deg, #fff3cd, #ffe69c);
+      color: #856404;
+      padding: 14px 24px;
+      margin: 0 30px 15px;
+      border-radius: 12px;
+      display: none;
+      align-items: center;
+      gap: 12px;
+      font-weight: 600;
+      border-left: 5px solid #ffc107;
+    }
+    .trash-banner.active { display: flex; }
+    .trash-banner i { font-size: 22px; }
+
+    @media (max-width: 768px) { 
+      .summary-section { grid-template-columns: repeat(2, 1fr); } 
+      .form-grid { grid-template-columns: 1fr; } 
+      .toolbar { flex-direction: column; } 
+      .search-box { min-width: 100%; } 
+      table { font-size: 12px; } 
+      th, td { padding: 10px 8px; } 
+      .color-picker-container { flex-direction: column; align-items: flex-start; } 
+    }
   </style>
 </head>
 <body>
@@ -222,6 +269,10 @@
       <button class="btn-add" onclick="openModal()">
         <i class="fas fa-plus"></i> เพิ่มรถเข้าสต็อก
       </button>
+      <button class="btn-add btn-trash" id="trashToggleBtn" onclick="toggleDeletedView()">
+        <i id="trashBtnIcon" class="fas fa-trash-restore"></i> 
+        <span id="trashBtnText">ดูถังขยะ</span>
+      </button>
       <div class="search-box">
         <i class="fas fa-search"></i>
         <input type="text" id="searchInput" placeholder="ค้นหา VIN, รุ่น, หมายเหตุ..." oninput="handleSearch()">
@@ -237,11 +288,17 @@
       </select>
     </div>
 
+    <!-- Trash Banner -->
+    <div class="trash-banner" id="trashBanner">
+      <i class="fas fa-trash-alt"></i>
+      <span>คุณกำลังดูข้อมูลใน "ถังขยะ" — ข้อมูลเหล่านี้ถูกซ่อนจากหน้าหลักแล้ว สามารถกู้คืนหรือลบถาวรได้</span>
+    </div>
+
     <!-- Table -->
     <div class="table-section">
       <div class="table-container">
         <div class="table-header">
-          <h2><i class="fas fa-list"></i> รายการสต็อก</h2>
+          <h2 id="tableTitle"><i class="fas fa-list"></i> รายการสต็อก</h2>
           <span class="table-count" id="tableCount">0 รายการ</span>
         </div>
         <div style="overflow-x: auto;">
@@ -435,6 +492,7 @@
     let filteredStocks = [];
     let currentEditId = null;
     let unsubscribe = null;
+    let showDeleted = false; // โหมดดูถังขยะ
 
     // ========== COLOR PICKER FUNCTIONS ==========
     function renderColorSwatches() {
@@ -545,6 +603,7 @@
               addDoc(collection(db, STOCK_COLLECTION), {
                 ...item,
                 daysInStock: daysInStock,
+                isDeleted: false,
                 createdAt: serverTimestamp(),
                 updatedAt: serverTimestamp()
               })
@@ -579,27 +638,38 @@
       return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
 
-    // ========== UPDATE STATS ==========
+    // ========== UPDATE STATS (นับเฉพาะที่ยังไม่ถูกลบ) ==========
     function updateStats() {
-      document.getElementById('statTotal').textContent = allStocks.length;
-      document.getElementById('statPending').textContent = allStocks.filter(s => s.status && s.status.includes('ยังไม่มีจอง')).length;
-      document.getElementById('statFinance').textContent = allStocks.filter(s => s.status && s.status.includes('ไฟแนนซ์อนุมัติ')).length;
-      document.getElementById('statDelivered').textContent = allStocks.filter(s => s.status && s.status.includes('ส่งมอบแล้ว')).length;
-      document.getElementById('statDisplay').textContent = allStocks.filter(s => s.status && s.status.includes('Display')).length;
+      const activeStocks = allStocks.filter(s => !s.isDeleted);
+      
+      document.getElementById('statTotal').textContent = activeStocks.length;
+      document.getElementById('statPending').textContent = activeStocks.filter(s => s.status && s.status.includes('ยังไม่มีจอง')).length;
+      document.getElementById('statFinance').textContent = activeStocks.filter(s => s.status && s.status.includes('ไฟแนนซ์อนุมัติ')).length;
+      document.getElementById('statDelivered').textContent = activeStocks.filter(s => s.status && s.status.includes('ส่งมอบแล้ว')).length;
+      document.getElementById('statDisplay').textContent = activeStocks.filter(s => s.status && s.status.includes('Display')).length;
     }
 
-    // ========== APPLY FILTERS ==========
+    // ========== APPLY FILTERS (รองรับ Soft Delete) ==========
     function applyFilters() {
       const searchTerm = document.getElementById('searchInput').value.toLowerCase();
       const filterStatus = document.getElementById('filterStatus').value;
 
       filteredStocks = allStocks.filter(stock => {
+        // 1. กรองตามโหมดถังขยะ
+        if (showDeleted) {
+          if (!stock.isDeleted) return false; // โหมดถังขยะ: แสดงเฉพาะที่ถูกลบ
+        } else {
+          if (stock.isDeleted) return false;  // โหมดปกติ: ซ่อนข้อมูลที่ถูกลบ
+        }
+
+        // 2. กรองตามคำค้นหา
         const matchSearch = !searchTerm || 
           (stock.vin && stock.vin.toLowerCase().includes(searchTerm)) ||
           (stock.model && stock.model.toLowerCase().includes(searchTerm)) ||
           (stock.remark && stock.remark.toLowerCase().includes(searchTerm)) ||
           (stock.color && stock.color.toLowerCase().includes(searchTerm));
         
+        // 3. กรองตามสถานะ
         const matchStatus = filterStatus === 'all' || 
           (stock.status && stock.status.includes(filterStatus));
         
@@ -618,13 +688,16 @@
       document.getElementById('tableCount').textContent = filteredStocks.length + ' รายการ';
 
       if (filteredStocks.length === 0) {
+        const emptyIcon = showDeleted ? 'fa-trash-alt' : 'fa-car';
+        const emptyTitle = showDeleted ? 'ถังขยะว่างเปล่า' : 'ไม่พบข้อมูล';
+        const emptyDesc = showDeleted ? 'ไม่มีการ์ดรถในถังขยะ' : 'ลองเปลี่ยนคำค้นหาหรือตัวกรอง';
         tbody.innerHTML = `
           <tr>
             <td colspan="11">
               <div class="empty-state">
-                <i class="fas fa-car"></i>
-                <h3>ไม่พบข้อมูล</h3>
-                <p>ลองเปลี่ยนคำค้นหาหรือตัวกรอง</p>
+                <i class="fas ${emptyIcon}"></i>
+                <h3>${emptyTitle}</h3>
+                <p>${emptyDesc}</p>
               </div>
             </td>
           </tr>
@@ -636,9 +709,36 @@
         const daysClass = stock.daysInStock > 365 ? 'days-high' : stock.daysInStock > 180 ? 'days-medium' : 'days-low';
         const statusClass = getStatusClass(stock.status);
         const colorHex = getColorHex(stock.color);
+        const rowClass = stock.isDeleted ? 'deleted-row' : '';
+
+        // สร้างปุ่มจัดการตามสถานะ
+        let actionButtons = '';
+        if (stock.isDeleted) {
+          actionButtons = `
+            <div class="action-btns">
+              <button class="btn-icon btn-restore" onclick="restoreStock('${stock.id}')" title="กู้คืนข้อมูล">
+                <i class="fas fa-undo"></i>
+              </button>
+              <button class="btn-icon btn-perm-delete" onclick="permanentDeleteStock('${stock.id}')" title="ลบถาวร">
+                <i class="fas fa-trash-alt"></i>
+              </button>
+            </div>
+          `;
+        } else {
+          actionButtons = `
+            <div class="action-btns">
+              <button class="btn-icon btn-edit" onclick="editStock('${stock.id}')" title="แก้ไข">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn-icon btn-delete" onclick="deleteStock('${stock.id}')" title="ย้ายไปถังขยะ">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          `;
+        }
 
         return `
-          <tr>
+          <tr class="${rowClass}">
             <td>${index + 1}</td>
             <td><span class="vin-cell">${stock.vin || '-'}</span></td>
             <td class="model-cell">${stock.model || '-'}</td>
@@ -654,16 +754,7 @@
             <td><span class="status-badge ${statusClass}">${stock.status || '-'}</span></td>
             <td class="price-cell">${stock.price ? '฿' + Number(stock.price).toLocaleString() : '-'}</td>
             <td class="remark-cell">${stock.remark || '-'}</td>
-            <td>
-              <div class="action-btns">
-                <button class="btn-icon btn-edit" onclick="editStock('${stock.id}')" title="แก้ไข">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button class="btn-icon btn-delete" onclick="deleteStock('${stock.id}')" title="ลบ">
-                  <i class="fas fa-trash"></i>
-                </button>
-              </div>
-            </td>
+            <td>${actionButtons}</td>
           </tr>
         `;
       }).join('');
@@ -736,22 +827,75 @@
       document.getElementById('modalOverlay').classList.add('active');
     };
 
-    // --- FIXED DELETE FUNCTION ---
+    // ========== SOFT DELETE FUNCTIONS ==========
     window.deleteStock = async (id) => {
-      if (!confirm('ยืนยันการลบข้อมูลรถคันนี้? การลบจะถาวรและไม่สามารถกู้คืนได้')) return;
-      
+      if (!confirm('ย้ายรายการนี้ไปยัง "ถังขยะ"?\nคุณสามารถกู้คืนข้อมูลนี้ได้ภายหลัง')) return;
       try {
-        // Show loading state or toast immediately if desired
-        const docRef = doc(db, STOCK_COLLECTION, id);
-        await deleteDoc(docRef);
-        
-        // Success is handled by the onSnapshot listener automatically updating the UI
-        // But we show a toast to confirm action
-        showToast('ลบข้อมูลสำเร็จ!', 'success');
+        await updateDoc(doc(db, STOCK_COLLECTION, id), {
+          isDeleted: true,
+          deletedAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+        showToast('ย้ายไปยังถังขยะแล้ว', 'success');
       } catch (error) {
-        console.error("Delete error:", error);
-        showToast('เกิดข้อผิดพลาดในการลบ: ' + error.message, 'error');
+        console.error("Soft delete error:", error);
+        showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
       }
+    };
+
+    window.restoreStock = async (id) => {
+      if (!confirm('กู้คืนข้อมูลรถคันนี้กลับสู่หน้าหลัก?')) return;
+      try {
+        await updateDoc(doc(db, STOCK_COLLECTION, id), {
+          isDeleted: false,
+          deletedAt: null,
+          updatedAt: serverTimestamp()
+        });
+        showToast('กู้คืนข้อมูลสำเร็จ!', 'success');
+      } catch (error) {
+        console.error("Restore error:", error);
+        showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
+      }
+    };
+
+    window.permanentDeleteStock = async (id) => {
+      if (!confirm('⚠️ ยืนยันการลบถาวร?\nข้อมูลจะหายไปตลอดกาลและไม่สามารถกู้คืนได้!')) return;
+      try {
+        await deleteDoc(doc(db, STOCK_COLLECTION, id));
+        showToast('ลบข้อมูลถาวรสำเร็จ', 'success');
+      } catch (error) {
+        console.error("Permanent delete error:", error);
+        showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
+      }
+    };
+
+    // ========== TOGGLE TRASH VIEW ==========
+    window.toggleDeletedView = () => {
+      showDeleted = !showDeleted;
+      const btnText = document.getElementById('trashBtnText');
+      const btnIcon = document.getElementById('trashBtnIcon');
+      const btn = document.getElementById('trashToggleBtn');
+      const banner = document.getElementById('trashBanner');
+      const tableTitle = document.getElementById('tableTitle');
+      const filterSelect = document.getElementById('filterStatus');
+      
+      if (showDeleted) {
+        btnText.textContent = 'กลับสู่หน้าหลัก';
+        btnIcon.className = 'fas fa-arrow-left';
+        btn.classList.add('active');
+        banner.classList.add('active');
+        tableTitle.innerHTML = '<i class="fas fa-trash-alt"></i> ถังขยะ';
+        filterSelect.disabled = true;
+        filterSelect.value = 'all';
+      } else {
+        btnText.textContent = 'ดูถังขยะ';
+        btnIcon.className = 'fas fa-trash-restore';
+        btn.classList.remove('active');
+        banner.classList.remove('active');
+        tableTitle.innerHTML = '<i class="fas fa-list"></i> รายการสต็อก';
+        filterSelect.disabled = false;
+      }
+      applyFilters();
     };
 
     // ========== FORM SUBMIT ==========
@@ -768,6 +912,7 @@
         price: parseFloat(document.getElementById('formPrice').value) || 0,
         remark: document.getElementById('formRemark').value.trim(),
         daysInStock: calculateDaysInStock(document.getElementById('formEntryDate').value),
+        isDeleted: false,
         updatedAt: serverTimestamp()
       };
 
